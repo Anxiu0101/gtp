@@ -6,23 +6,14 @@ import (
 )
 
 func main() {
-	r := gtp.New()
-	r.GET("/", func(ctx *gtp.Context) {
-		ctx.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
+	r := gtp.Default()
+	r.GET("/", func(c *gtp.Context) {
+		c.String(http.StatusOK, "Hello Geektutu\n")
 	})
-
-	r.GET("/hello", func(ctx *gtp.Context) {
-		// expect /hello?name=anxiu
-		ctx.String(http.StatusOK, "hello %s, you're at %s\n", ctx.Query("name"), ctx.Path)
-	})
-
-	r.GET("/hello/:name", func(ctx *gtp.Context) {
-		// expect /hello/anxiu
-		ctx.String(http.StatusOK, "hello %s, you're at %s\n", ctx.Param("name"), ctx.Path)
-	})
-
-	r.GET("/assets/*filepath", func(ctx *gtp.Context) {
-		ctx.JSON(http.StatusOK, gtp.H{"filepath": ctx.Param("filepath")})
+	// index out of range for testing Recovery()
+	r.GET("/panic", func(c *gtp.Context) {
+		names := []string{"geektutu"}
+		c.String(http.StatusOK, names[100])
 	})
 
 	r.Run(":8080")
