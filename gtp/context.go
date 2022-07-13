@@ -21,7 +21,7 @@ type Context struct {
 	/* response info */
 	StatusCode int
 
-	// middleware
+	/* middleware */
 	handlers []HandlerFunc
 	index    int
 }
@@ -62,9 +62,17 @@ func (ctx *Context) Next() {
 	}
 }
 
-func (c *Context) Fail(code int, err string) {
-	c.index = len(c.handlers)
-	c.JSON(code, H{"message": err})
+func (ctx *Context) Fail(code int, err string) {
+	ctx.index = len(ctx.handlers)
+	ctx.JSON(code, H{"message": err})
+}
+
+func (ctx *Context) Header(key, value string) {
+	if value == "" {
+		ctx.Writer.Header().Del(key)
+		return
+	}
+	ctx.Writer.Header().Set(key, value)
 }
 
 func (ctx *Context) SetHeader(key string, value string) {
