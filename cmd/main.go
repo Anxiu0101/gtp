@@ -31,12 +31,18 @@ func main() {
 				"password": ctx.PostForm("password"),
 			})
 		})
+		v2.DELETE("/:name", func(ctx *gtp.Context) {
+			ctx.String(http.StatusOK, "hello %s, delete test OK", ctx.Query("name"))
+		})
+		v2.PUT("/:name", func(ctx *gtp.Context) {
+			ctx.String(http.StatusOK, "hello %s, PUT test OK", ctx.Query("name"))
+		})
 	}
 
 	// index out of range for testing Recovery()
 	r.GET("/panic", func(ctx *gtp.Context) {
 		names := []string{"Anxiu"}
-		ctx.String(http.StatusOK, names[100])
+		ctx.String(http.StatusOK, names[2])
 	})
 
 	r.Run(":8080")

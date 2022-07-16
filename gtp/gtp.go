@@ -6,15 +6,24 @@ import (
 	"strings"
 )
 
-// HandlerFunc defines the request handler used by gee
+// HandlerFunc defines the request handler used by gtp
 type HandlerFunc func(ctx *Context)
 
-// Engine implement the interface of ServeHTTP
-type Engine struct {
-	*RouterGroup
-	router *router
-	groups []*RouterGroup // store all groups
-}
+type (
+	// Engine implement the interface of http.Handler
+	Engine struct {
+		*RouterGroup // root Group
+		router       *router
+		groups       []*RouterGroup // store all groups
+	}
+
+	RouterGroup struct {
+		prefix      string
+		middlewares []HandlerFunc // support middleware
+		parent      *RouterGroup  // support nesting
+		engine      *Engine       // all groups share a Engine instance
+	}
+)
 
 // New is the constructor of gee.Engine
 func New() *Engine {
@@ -24,7 +33,7 @@ func New() *Engine {
 	return engine
 }
 
-// Default use Logger() & Recovery middlewares
+// Default use Logger() & Recovery() middlewares
 func Default() *Engine {
 	engine := New()
 	engine.Use(Logger(), Recovery())
@@ -36,23 +45,18 @@ func (engine *Engine) Run(addr string) (err error) {
 	return http.ListenAndServe(addr, engine)
 }
 
+// ServeHTTP implements the interface
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// support middleware
 	var middlewares []HandlerFunc
 	for _, group := range engine.groups {
 		if strings.HasPrefix(req.URL.Path, group.prefix) {
 			middlewares = append(middlewares, group.middlewares...)
 		}
 	}
-	c := newContext(w, req)
-	c.handlers = middlewares
-	engine.router.handle(c)
-}
-
-type RouterGroup struct {
-	prefix      string
-	middlewares []HandlerFunc // support middleware
-	parent      *RouterGroup  // support nesting
-	engine      *Engine       // all groups share a Engine instance
+	ctx := newContext(w, req)
+	ctx.handlers = middlewares
+	engine.router.handle(ctx)
 }
 
 // Group is defined to create a new RouterGroup
@@ -68,9 +72,10 @@ func (group *RouterGroup) Group(prefix string) *RouterGroup {
 	return newGroup
 }
 
+// addRoute registers the router in engine as the simply 'GET - /v1/hello'
 func (group *RouterGroup) addRoute(method string, comp string, handler HandlerFunc) {
 	pattern := group.prefix + comp
-	log.Printf("Route %4s - %s", method, pattern)
+	log.Printf("[gtp] Route %4s - %s", method, pattern)
 	group.engine.router.addRoute(method, pattern, handler)
 }
 
@@ -87,4 +92,14 @@ func (group *RouterGroup) GET(pattern string, handler HandlerFunc) {
 // POST defines the method to add POST request
 func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
 	group.addRoute("POST", pattern, handler)
+}
+
+// DELETE defines the method to add DELETE request
+func (group *RouterGroup) DELETE(pattern string, handler HandlerFunc) {
+	group.addRoute("DELETE", pattern, handler)
+}
+
+// PUT defines the method to add PUT request
+func (group *RouterGroup) PUT(pattern string, handler HandlerFunc) {
+	group.addRoute("PUT", pattern, handler)
 }
