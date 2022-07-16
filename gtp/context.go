@@ -75,18 +75,19 @@ func (ctx *Context) Header(key, value string) {
 	ctx.Writer.Header().Set(key, value)
 }
 
-func (ctx *Context) SetHeader(key string, value string) {
-	ctx.Writer.Header().Set(key, value)
+func (ctx *Context) Data(code int, data []byte) {
+	ctx.Status(code)
+	ctx.Writer.Write(data)
 }
 
 func (ctx *Context) String(code int, format string, values ...interface{}) {
-	ctx.SetHeader("Content-Type", "text/plain")
+	ctx.Header("Content-Type", "text/plain")
 	ctx.Status(code)
 	ctx.Writer.Write([]byte(fmt.Sprintf(format, values...)))
 }
 
 func (ctx *Context) JSON(code int, obj interface{}) {
-	ctx.SetHeader("Content-Type", "application/json")
+	ctx.Header("Content-Type", "application/json")
 	ctx.Status(code)
 	encoder := json.NewEncoder(ctx.Writer)
 	if err := encoder.Encode(obj); err != nil {
@@ -94,13 +95,8 @@ func (ctx *Context) JSON(code int, obj interface{}) {
 	}
 }
 
-func (ctx *Context) Data(code int, data []byte) {
-	ctx.Status(code)
-	ctx.Writer.Write(data)
-}
-
 func (ctx *Context) HTML(code int, html string) {
-	ctx.SetHeader("Content-Type", "text/html")
+	ctx.Header("Content-Type", "text/html")
 	ctx.Status(code)
 	ctx.Writer.Write([]byte(html))
 }

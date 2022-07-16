@@ -18,9 +18,6 @@ func main() {
 		v1.GET("/:name", func(ctx *gtp.Context) {
 			ctx.String(http.StatusOK, "hello %s, you're at %s\n", ctx.Query("name"), ctx.Path)
 		})
-		v1.GET("/hello", func(ctx *gtp.Context) {
-			ctx.String(http.StatusOK, "Hello Anxiu\n")
-		})
 	}
 
 	v2 := r.Group("/v2")
@@ -28,8 +25,11 @@ func main() {
 		v2.GET("/:name", func(ctx *gtp.Context) {
 			ctx.String(http.StatusOK, "hello %s, you're at %s\n", ctx.Query("name"), ctx.Path)
 		})
-		v2.GET("/hello", func(ctx *gtp.Context) {
-			ctx.String(http.StatusOK, "Hello Anxiu\n")
+		v2.POST("/:name", func(ctx *gtp.Context) {
+			ctx.JSON(http.StatusOK, gtp.H{
+				"username": ctx.PostForm("username"),
+				"password": ctx.PostForm("password"),
+			})
 		})
 	}
 
