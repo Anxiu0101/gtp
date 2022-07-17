@@ -12,73 +12,17 @@
 
 ## 功能实现
 
-- [ ] 动态路由
+- [x] 动态路由
 
-- [ ] 上下文包装
+- [x] 上下文包装
 
-- [ ] 前缀树
+- [x] 前缀树
 
-- [ ] 分组控制
+- [x] 分组控制
 
-- [ ] 中间件
-
-## gtp 设计思路
+- [x] 中间件
 
 主要是对于 gin 进行模仿
-
-```puml
-package gtp{
-    class Context {
-
-    }
-
-    class Engine {
-        RouterGroup
-        EngineConfig...: Options
-    }
-
-    interface IRoutes {
-        Use(...HandlerFunc) IRoutes
-
-        Handle(pattern, string, ...HandlerFunc) IRoutes
-        GET(pattern, ...HandlerFunc) IRoutes
-        POST(pattern, ...HandlerFunc) IRoutes
-        DELETE(pattern, ...HandlerFunc) IRoutes
-        PUT(pattern, ...HandlerFunc) IRoutes
-
-        StaticFile(pattern, string) IRoutes
-        Static(pattern, string) IRoutes
-        StaticFS(pattern, http.FileSystem) IRoutes
-    }
-
-    class RouterGroup {
-        Handlers []HandlerFunc
-        basePath string
-        engine   *Engine
-        root     bool
-
-        Use(...HandlerFunc) IRoutes
-
-        Handle(pattern, string, ...HandlerFunc) IRoutes
-        GET(pattern, ...HandlerFunc) IRoutes
-        POST(pattern, ...HandlerFunc) IRoutes
-        DELETE(pattern, ...HandlerFunc) IRoutes
-        PUT(pattern, ...HandlerFunc) IRoutes
-
-        StaticFile(pattern, string) IRoutes
-        Static(pattern, string) IRoutes
-        StaticFS(pattern, http.FileSystem) IRoutes
-    }
-
-    RouterGroup --o Engine
-    RouterGroup *-- Engine
-    RouterGroup --|> IRouters
-}
-
-package gtp_test{
-
-}
-```
 
 ## 具体功能
 
@@ -88,9 +32,9 @@ package gtp_test{
 
 ```go
 type Engine struct {
-	*RouterGroup
-	router *router
-	groups []*RouterGroup // store all groups
+    *RouterGroup
+    router *router
+    groups []*RouterGroup // store all groups
 }
 ```
 
@@ -103,21 +47,21 @@ type Engine struct {
 
 ```go
 type Context struct {
-	/* origin objects */
-	Writer http.ResponseWriter
-	Req    *http.Request
+    /* origin objects */
+    Writer http.ResponseWriter
+    Req    *http.Request
 
-	/* request info */
-	Path   string
-	Method string
-	Params map[string]string // store the router parameter
+    /* request info */
+    Path   string
+    Method string
+    Params map[string]string // store the router parameter
 
-	/* response info */
-	StatusCode int
+    /* response info */
+    StatusCode int
 
-	/* middleware */
-	handlers []HandlerFunc
-	index    int
+    /* middleware */
+    handlers []HandlerFunc
+    index    int
 }
 ```
 
@@ -129,22 +73,16 @@ Context 的实质就是对于请求的封装，让其携带上需要的信息。
 
 ```go
 type router struct {
-	// Create one root for each method,
-	// e.g. roots['GET'], roots['POST']
-	roots map[string]*node
-	// handlers key matched one method and one path
-	// e.g. handlers['GET-/user/info']
-	handlers map[string]HandlerFunc
+    // Create one root for each method,
+    // e.g. roots['GET'], roots['POST']
+    roots map[string]*node
+    // handlers key matched one method and one path
+    // e.g. handlers['GET-/user/info']
+    handlers map[string]HandlerFunc
 }
 ```
 
 路由这个结构体中储存了两个字段，一个是各方法路由与前缀树上节点的映射表，即 `roots`，一个是各路由与其句柄函数的 `map`，
-
-
-
-
-
-
 
 #### Trie tree
 
@@ -152,10 +90,10 @@ type router struct {
 
 ```go
 type node struct {
-	pattern  string  // 待匹配路由，例如 /p/:lang
-	part     string  // 路由中的一部分，例如 :lang
-	children []*node // 子节点，例如 [doc, tutorial, intro]
-	isWild   bool    // 是否精确匹配，part 含有 : 或 * 时为true
+    pattern  string  // 待匹配路由，例如 /p/:lang
+    part     string  // 路由中的一部分，例如 :lang
+    children []*node // 子节点，例如 [doc, tutorial, intro]
+    isWild   bool    // 是否精确匹配，part 含有 : 或 * 时为true
 }
 ```
 
@@ -165,10 +103,10 @@ type node struct {
 
 ```go
 type RouterGroup struct {
-		prefix      string
-		middlewares []HandlerFunc // support middleware
-		parent      *RouterGroup  // support nesting
-		engine      *Engine       // all groups share a Engine instance
+        prefix      string
+        middlewares []HandlerFunc // support middleware
+        parent      *RouterGroup  // support nesting
+        engine      *Engine       // all groups share a Engine instance
 }
 ```
 
@@ -178,19 +116,19 @@ type RouterGroup struct {
 
 ```go
 func Cors() HandlerFunc {
-	return func(c *Context) {
-		origin := c.Req.Header["Origin"] //请求头部
-		if len(origin) == 0 {
-			// 当Access-Control-Allow-Credentials为true时，将*替换为指定的域名
-			c.Header("Access-Control-Allow-Origin", "http://example.com")
-			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
-			c.Header("Access-Control-Allow-Headers", "Origin, X-Requested-With, X-Extra-Header, Content-Type, Accept, Authorization")
-			c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Cache-Control, Content-Language, Content-Type")
-			c.Header("Access-Control-Allow-Credentials", "true")
-			c.Header("Access-Control-Max-Age", "86400") // 可选
-		}
-		c.Next() // 继续执行
-	}
+    return func(c *Context) {
+        origin := c.Req.Header["Origin"] //请求头部
+        if len(origin) == 0 {
+            // 当Access-Control-Allow-Credentials为true时，将*替换为指定的域名
+            c.Header("Access-Control-Allow-Origin", "http://example.com")
+            c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
+            c.Header("Access-Control-Allow-Headers", "Origin, X-Requested-With, X-Extra-Header, Content-Type, Accept, Authorization")
+            c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Cache-Control, Content-Language, Content-Type")
+            c.Header("Access-Control-Allow-Credentials", "true")
+            c.Header("Access-Control-Max-Age", "86400") // 可选
+        }
+        c.Next() // 继续执行
+    }
 }
 ```
 
@@ -200,32 +138,32 @@ func Cors() HandlerFunc {
 
 ```go
 func Recovery() HandlerFunc {
-	return func(c *Context) {
-		defer func() {
-			if err := recover(); err != nil {
-				message := fmt.Sprintf("%s", err)
-				log.Printf("%s\n\n", trace(message))
-				c.Fail(http.StatusInternalServerError, "Internal Server Error")
-			}
-		}()
+    return func(c *Context) {
+        defer func() {
+            if err := recover(); err != nil {
+                message := fmt.Sprintf("%s", err)
+                log.Printf("%s\n\n", trace(message))
+                c.Fail(http.StatusInternalServerError, "Internal Server Error")
+            }
+        }()
 
-		c.Next()
-	}
+        c.Next()
+    }
 }
 
 // print stack trace for debug
 func trace(message string) string {
-	var pcs [32]uintptr
-	n := runtime.Callers(3, pcs[:]) // skip first 3 caller
+    var pcs [32]uintptr
+    n := runtime.Callers(3, pcs[:]) // skip first 3 caller
 
-	var str strings.Builder
-	str.WriteString(message + "\nTraceback:")
-	for _, pc := range pcs[:n] {
-		fn := runtime.FuncForPC(pc)
-		file, line := fn.FileLine(pc)
-		str.WriteString(fmt.Sprintf("\n\t%s:%d", file, line))
-	}
-	return str.String()
+    var str strings.Builder
+    str.WriteString(message + "\nTraceback:")
+    for _, pc := range pcs[:n] {
+        fn := runtime.FuncForPC(pc)
+        file, line := fn.FileLine(pc)
+        str.WriteString(fmt.Sprintf("\n\t%s:%d", file, line))
+    }
+    return str.String()
 }
 ```
 
@@ -233,20 +171,18 @@ func trace(message string) string {
 
 ```go
 func Logger() HandlerFunc {
-	return func(c *Context) {
-		// Start timer
-		t := time.Now()
-		// Process request
-		c.Next()
-		// Calculate resolution time
-		log.Printf("[gtp] [%d] %s in %v", c.StatusCode, c.Req.RequestURI, time.Since(t))
-	}
+    return func(c *Context) {
+        // Start timer
+        t := time.Now()
+        // Process request
+        c.Next()
+        // Calculate resolution time
+        log.Printf("[gtp] [%d] %s in %v", c.StatusCode, c.Req.RequestURI, time.Since(t))
+    }
 }
 ```
 
 Logger 实现简单控制台日志功能
-
-
 
 ## 测试
 
@@ -272,8 +208,6 @@ InputFields       : {}
 Links             : {}
 ParsedHtml        : mshtml.HTMLDocumentClass
 RawContentLength  : 18
-
-
 ```
 
 动态路由正常返回，不使用 Cors 中间件
@@ -338,8 +272,6 @@ $ curl -X POST -F 'username=Anxiu' -F 'password=123456' http://localhost:8080/v2
 2022/07/16 11:01:43 [gtp] [200] /v2/Anxiu in 59.744µs
 ```
 
-
-
 Panic
 
 ```shell
@@ -367,11 +299,5 @@ Traceback:
 
 2022/07/16 10:01:26 [gtp] [500] /panic in 2.7332ms
 ```
-
-
-
-
-
-
 
 na
